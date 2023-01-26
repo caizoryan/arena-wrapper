@@ -2,6 +2,7 @@ class Arena {
   #url;
   #channel;
   #content = [];
+  #channelMeta;
   #fetched = false;
   constructor(channel) {
     this.#url = "https://api.are.na/v2/";
@@ -10,7 +11,10 @@ class Arena {
   }
 
   #init() {
-    this.#fetch("channels/", "length").then((res) => this.#getContent(res));
+    this.#fetch("channels/", "").then((res) => {
+      this.#channelMeta = res;
+      this.#getContent(res.length);
+    });
   }
 
   async #getContent(length) {
@@ -48,14 +52,47 @@ class Arena {
   /** Returns all the content of the channel as a promise.
    * @returns {Promise} Of an array of objects containing all the data of the channel
    */
-  async everything() {
+  async allContent() {
     // return all content
     if (!this.#fetched)
-      return await this.#fetch("channels/", "length")
-        .then((res) => this.#returnContent(res))
+      return await this.#fetch("channels/", "")
+        .then((res) => {
+          this.#channelMeta = res;
+          this.#fetched = true;
+          return this.#returnContent(res.length);
+        })
         .then((res) => res);
+    // return await this.#fetch("channels/", "length")
+    //   .then((res) => this.#returnContent(res))
+    //   .then((res) => res);
     else {
       return this.#content;
+    }
+  }
+
+  async meta() {
+    if (!this.#fetched) {
+      return await this.everything().then((res) => res.channel);
+    } else {
+      return this.#channelMeta;
+    }
+  }
+
+  async everything() {
+    if (!this.#fetched) {
+      return await this.#fetch("channels/", "")
+        .then((res) => {
+          this.#channelMeta = res;
+          this.#fetched = true;
+          return this.#returnContent(res.length);
+        })
+        .then((res) => {
+          let data = { content: res, channel: this.#channelMeta };
+          return data;
+        });
+    } else {
+      let data = { content: this.#content, channel: this.#channelMeta };
+      return data;
     }
   }
 
@@ -63,7 +100,7 @@ class Arena {
    * @returns {Promise} promise of an array objects containing all text blocks
    */
   async texts() {
-    return await this.everything().then((res) =>
+    return await this.allContent().then((res) =>
       res.filter((block) => block.class === "Text")
     );
   }
@@ -72,7 +109,7 @@ class Arena {
    * @returns {Promise} promise of an array objects containing all Image blocks
    */
   async images() {
-    return await this.everything().then((res) =>
+    return await this.allContent().then((res) =>
       res.filter((block) => block.class === "Image")
     );
   }
@@ -81,7 +118,7 @@ class Arena {
    * @returns {Promise} promise of an array objects containing all Link blocks
    */
   async links() {
-    return await this.everything().then((res) =>
+    return await this.allContent().then((res) =>
       res.filter((block) => block.class === "Link")
     );
   }
@@ -90,7 +127,7 @@ class Arena {
    * @returns {Promise} Promise of an array objects containing all attatchments blocks
    */
   async attachments() {
-    return await this.everything().then((res) =>
+    return await this.allContent().then((res) =>
       res.filter((block) => block.class === "Attachment")
     );
   }
@@ -99,7 +136,7 @@ class Arena {
    * @returns {Promise} Promise of an array objects containing all Channels blocks
    */
   async channel() {
-    return await this.everything().then((res) =>
+    return await this.allContent().then((res) =>
       res.filter((block) => block.class === "Channel")
     );
   }
@@ -109,7 +146,7 @@ class Arena {
    * @returns {Promise} Promise of an array objects containing all Channels blocks
    */
   async title(required) {
-    return await this.everything().then((res) => {
+    return await this.allContent().then((res) => {
       res.filter((block) => block.title === required);
     });
   }
@@ -123,7 +160,7 @@ class Arena {
    * @returns {Promise} Promise of an array objects containing all Channels blocks
    */
   async customFilter(callback) {
-    return await this.everything().then((res) => res.filter(callback));
+    return await this.allContent().then((res) => res.filter(callback));
   }
 
   /** Returns a block with given id
