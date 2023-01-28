@@ -42,6 +42,8 @@ class Arena {
         promises.push(
           this.#fetch("channels/", "contents", `?page=${i + 1}&amp;per=100`)
         );
+      // multiple promises, will break for larger channels since if one promise doesn't fulfill nothing will work
+      // TODO: Find a better way to do this.
       return await Promise.all(promises).then((data) => {
         console.log(data.flat());
         return data.flat();
