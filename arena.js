@@ -4,6 +4,7 @@ class Arena {
   #content = [];
   #channelMeta;
   #fetched = false;
+
   constructor(channel) {
     this.#url = "https://api.are.na/v2/";
     this.#channel = channel;
@@ -152,10 +153,6 @@ class Arena {
       res.filter((block) => block.title === required);
     });
   }
-
-  // sort() {
-  //   // sort content by x, y, z
-  // }
 
   /** Returns all the blocks that are titled the given parameter
    * @param {function} Callback - A callback for the filter, to get filtered array of blocks
